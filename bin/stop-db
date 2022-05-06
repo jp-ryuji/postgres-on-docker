@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# set up options
+while getopts 'hrv' c
+do
+  case $c in
+    h) HELP=true ;;
+    r) REMOVE_CONTAINER=true ;;
+    v) REMOVE_VOLUME=true ;;
+  esac
+done
+
+if test "$HELP" = "true"; then
+  echo "Usage: stop-dev [-r] [-v]"
+  echo "\t-h       Display Help"
+  echo "\t-r       Remove container"
+  echo "\t-v       Remove volume"
+  exit
+fi
+
+PROJECT_ROOT=`dirname $0`/..
+. $PROJECT_ROOT/.env
+
+# stop the container
+echo "Stopping container $CONTAINER_NAME"
+docker stop $CONTAINER_NAME > /dev/null 2>&1
+
+# remove the container if requested
+if test "$REMOVE_CONTAINER" = "true"; then
+  echo "Removing container $CONTAINER_NAME"
+  docker rm $CONTAINER_NAME > /dev/null 2>&1
+fi
+
+# remove the volume if requested
+if test "$REMOVE_VOLUME" = "true"; then
+  echo "Removing volume $VOLUME"
+  docker volume rm $VOLUME > /dev/null 2>&1
+fi

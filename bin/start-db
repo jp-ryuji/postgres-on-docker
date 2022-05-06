@@ -1,0 +1,32 @@
+#!/bin/sh
+
+CURRENT_DIR=$(cd $(dirname $0); pwd)
+PG_VERSION=14.5
+DOT_ENV_FILE=$CURRENT_DIR/../.env
+source $DOT_ENV_FILE
+
+# Check if the container already exists.
+# If not create it with 'docker run'.
+# If it does, start it with 'docker start'.
+docker inspect $CONTAINER_NAME > /dev/null 2>&1
+if test "$?" = "0"; then
+  echo "Starting container $CONTAINER_NAME with port $DB_PORT"
+  docker start $CONTAINER_NAME > /dev/null 2>&1
+else
+  docker run -d \
+    --name $CONTAINER_NAME \
+    --mount type=volume,source=$VOLUME,destination=/var/lib/postgresql/data \
+    -p $DB_PORT:5432 \
+    -e POSTGRES_USER=$DB_USERNAME \
+    -e POSTGRES_PASSWORD=$DB_PASSWORD \
+    -e POSTGRES_DB=$DB_NAME \
+    -e POSTGRES_INITDB_ARGS=$POSTGRES_INITDB_ARGS \
+    -e PGPASSWORD=$PGPASSWORD \
+    -e TZ=$POSTGRES_TZ \
+    postgres:$PG_VERSION
+
+  # First run (docker run) takes about 5 - 10 seconds to
+  # fully startup so sleep here to give it time
+  echo "Database container ($CONTAINER_NAME with port $DB_PORT) - creating ... (first run only)"
+  sleep 10
+fi
